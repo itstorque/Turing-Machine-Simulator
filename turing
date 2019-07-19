@@ -1,0 +1,36 @@
+if [ $# -eq 0 ]; then
+
+        nano ~/delete/temp.turing
+
+        program=$(cat ~/delete/temp.turing)
+
+        echo input:
+        read indata
+
+        indata="~/delete/temp.turing $indata"
+
+else
+
+	if [ $1 == "speed" ]; then
+
+		sed -i '' "s/speed->.*/speed->$2/g" ~/scripts/source_files/turing.tmap
+		
+	else
+
+		program=$(cat $1)
+	
+		indata="$*"
+	
+		echo "$indata"
+	
+		~/scripts/source_files/turing.py "$program" "$indata"
+
+		if [ $# -eq 0 ]; then
+
+		        mv ~/delete/temp.turing ~/delete/delete.turing
+
+		fi
+
+	fi
+
+fi

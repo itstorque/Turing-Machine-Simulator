@@ -1,0 +1,42 @@
+;; bin to dec
+
+0 * * r 0
+0 _ * l 1
+
+1 0 1 l d
+1 1 0 l add_one
+1 s _ l 1
+1 _ _ l halt
+
+d 1 0 l add_one
+d 0 1 l d
+d _ * * init_end
+
+add_one * * l add_one
+add_one _ _ l val_add
+
+val_add _ 0 * val_add
+val_add 0 1 * move_back
+val_add 1 2 * move_back
+val_add 2 3 * move_back
+val_add 3 4 * move_back
+val_add 4 5 * move_back
+val_add 5 6 * move_back
+val_add 6 7 * move_back
+val_add 7 8 * move_back
+val_add 8 9 * move_back
+val_add 9 0 l val_add
+
+move_back * * r move_back
+move_back _ * r check_zero
+move_back s * r check_zero
+
+check_zero * * r 0
+check_zero s * r check_zero
+check_zero 0 s r 0
+
+init_end _ * r end
+
+end * _ r end
+end _ _ r halt
+
