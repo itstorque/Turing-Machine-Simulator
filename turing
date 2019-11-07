@@ -13,17 +13,17 @@ else
 
 	if [ $1 == "speed" ]; then
 
-		sed -i '' "s/speed->.*/speed->$2/g" ./source_files/turing.tmap
-		
+		sed -i '' "s/speed->.*/speed->$2/g" ./main/turing.tmap
+
 	else
 
 		program=$(cat $1)
-	
+
 		indata="$*"
-	
+
 		echo "$indata"
-	
-		./source_files/turing.py "$program" "$indata"
+
+		./main/turing.py "$program" "$indata"
 
 	fi
 

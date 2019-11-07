@@ -3,16 +3,25 @@
 import sys
 import time
 
-###########
-#FUNCTIONS#
-###########
+#################
+#   FUNCTIONS   #
+#################
+
+class NoInitialStateDefined(Exception):
+
+    def __init___(self):
+
+        Exception.__init__(self)
+
+    def __str__(self):
+
+        return "The initial state 0 was not found in your turing code"
 
 def display(out, pos, hide=True):
 
         if hide == True: hide = "\r"
         else: hide = "\n"
 
-	#reset
         print(" "*100, end="\r")
 
         RED   = "\033[1;31m"
@@ -32,74 +41,9 @@ def display(out, pos, hide=True):
         sys.stdout.write(REVERSE+RESET)
         print(''.join(out.slice(pos, True)), end=hide)
 
-#########
-#CLASSES#
-#########
-
-class TuringTape:
-
-    def __init__(self, init):
-
-        self.tape = dict(enumerate(init))
-
-    def __getitem__(self, i):
-        
-        if not isinstance(i,slice):
-            
-            try: return self.tape[i]
-            except: return "_"
-
-        else:
-            
-            raise NotImplementedError
-
-    def slice(self, i, after):
-        
-        ans = ""
-        
-        r = range(min(self.tape), i)
-        
-        if after:
-            r = range(i+1, max(self.tape)+1)
-            
-        for a in r:
-                
-            try: ans += self.tape[a]
-            except: ans += "_"
-            
-        return ans
-
-    def __setitem__(self, i, val):
-        
-        self.tape[i] = val
-
-########
-# MAIN #
-########
-
-if __name__ == "__main__":
-
-    dt=0
-
-    with open("/Users/tareqdandachi/scripts/source_files/turing.tmap", encoding="utf-8") as f:
-
-        text = f.read()
-
-        dt = float(text.split("speed->")[1].split("\n")[0])
-    
-    lines = sys.argv[1].split('\n')
-
-    input = TuringTape('_'.join(sys.argv[2].split(' ')[1:]))
-
-    steps = 0
-
-    cursor_pos = 0
-
-    display(input, cursor_pos)
+def decode_states(lines):
 
     states = {}
-
-    state = '0'
 
     for i in lines:
 
@@ -114,16 +58,95 @@ if __name__ == "__main__":
     if '0' not in states:
         raise NoInitialStateDefined
 
+    return states
+
+def decode_state(states, state, input_val):
+
+    try: runtime = states[state][input_val]
+    except:
+        try: runtime = states[state]["*"]
+        except: raise UndefinedState
+
+    return runtime
+
+#################
+#    CLASSES    #
+#################
+
+class TuringTape:
+
+    def __init__(self, init):
+
+        self.tape = dict(enumerate(init))
+
+    def __getitem__(self, i):
+
+        if not isinstance(i,slice):
+
+            try: return self.tape[i]
+            except: return "_"
+
+        else:
+
+            raise NotImplementedError
+
+    def slice(self, i, after):
+
+        ans = ""
+
+        r = range(min(self.tape), i)
+
+        if after:
+            r = range(i+1, max(self.tape)+1)
+
+        for a in r:
+
+            try: ans += self.tape[a]
+            except: ans += "_"
+
+        return ans
+
+    def __setitem__(self, i, val):
+
+        self.tape[i] = val
+
+#################
+#      MAIN     #
+#################
+
+if __name__ == "__main__":
+
+    dt=0
+
+    with open("main/turing.tmap", encoding="utf-8") as f:
+
+        text = f.read()
+
+        dt = float(text.split("speed->")[1].split("\n")[0])
+
+    lines = sys.argv[1].split('\n')
+
+    input = TuringTape('_'.join(sys.argv[2].split(' ')[1:]))
+
+    steps = 0
+
+    cursor_pos = 0
+
+    display(input, cursor_pos)
+
+    states = decode_states(lines)
+
+    print(states)
+
+    state = '0'
+
     while state[:4] != 'halt':
 
         steps += 1
 
         local_input = input[cursor_pos]
-        try: runtime = states[state][local_input]
-        except:
-            try: runtime = states[state]["*"]
-            except: raise UndefinedState
 
+        runtime = decode_state(states, state, local_input)
 
         state = runtime[2]
         if runtime[0]!="*": input[cursor_pos] = runtime[0]
@@ -143,7 +166,7 @@ if __name__ == "__main__":
         else:
 
             raise InvalidMove
-        
+
         display(input, cursor_pos)
         time.sleep(dt)
     display(input, cursor_pos, hide=False)
