@@ -62,10 +62,14 @@ def decode_states(lines):
 
 def decode_state(states, state, input_val):
 
-    try: runtime = states[state][input_val]
-    except:
-        try: runtime = states[state]["*"]
-        except: raise UndefinedState
+    if state not in states:
+        raise UndefinedState
+
+    if input_val in states[state]:
+        return states[state][input_val]
+
+    else:
+        return states[state]["*"]
 
     return runtime
 
