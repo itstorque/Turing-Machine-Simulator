@@ -9,7 +9,7 @@ import time
 
 class NoInitialStateDefined(Exception):
 
-    def __init___(self):
+    def __init__(self):
 
         Exception.__init__(self)
 
@@ -68,10 +68,7 @@ def decode_state(states, state, input_val):
     if input_val in states[state]:
         return states[state][input_val]
 
-    else:
-        return states[state]["*"]
-
-    return runtime
+    return states[state]["*"]
 
 #################
 #    CLASSES    #

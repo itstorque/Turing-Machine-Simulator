@@ -10,7 +10,7 @@ import math
 
 class NotApplicableType(Exception):
 
-    def __init___(self):
+    def __init__(self):
 
         Exception.__init__(self)
 
@@ -19,6 +19,54 @@ class NotApplicableType(Exception):
         message = "The export file type you specified is not supported. The current supported types are:\n" + '\n  - '.join(SUPPORTED_EXPORT_TYPES)
 
         return message
+
+class FileClosed(Exception):
+
+    def __init__(self):
+
+        Exception.__init__(self)
+
+    def __str__(self):
+
+        message = "An error occured while writing to the file."
+
+        return message
+
+class FileController:
+
+    def __init__(self, file_path):
+
+        # Opening File
+
+        self.file_path = file_path
+
+        self.file = open(file_path, "w")
+
+        self.file_content = ";This file was created using Turing-Machine-Simulator by @tareqdandachi"
+
+        self.file.write(self.file_content)
+
+        self.is_open = True
+
+    def append(self, text):
+
+        if not self.is_open: raise FileClosed
+
+        # add new line + text to self.file
+
+        text = "\n" + text
+
+        self.file_content += text
+
+        self.file.write(text)
+
+    def close(self):
+
+        if not self.is_open: return
+
+        self.file.close()
+
+        self.is_open = False
 
 #################
 #   FUNCTIONS   #
@@ -42,13 +90,19 @@ def get_symbols(states):
 #    COMPILE    #
 #################
 
-def compile(file_name, export_type="ASM", *argv):
+def compile(file_name, export_type="ASM", export_name="", *argv):
+
+    if export_name == "":
+
+        export_name = file_name.split(".")[0] + export_type.lower()
 
     if not export_type in SUPPORTED_EXPORT_TYPES: raise NotApplicableType
 
-    return SUPPORTED_EXPORT_TYPES[export_type](file_name, argv)
+    return SUPPORTED_EXPORT_TYPES[export_type](file_name, export_name, argv)
 
-def compile_asm(file_name, *argv):
+def compile_asm(file_name, export_name, *argv):
+
+    file_handler = FileController(export_name)
 
     lines = file_name.split('\n')
 
@@ -73,6 +127,8 @@ def compile_asm(file_name, *argv):
         n += 1
 
     print(symbol_map, num_per_register)
+
+    file_handler.append("HI")
 
     return
 
@@ -115,6 +171,6 @@ reject _ : r reject2
 reject * _ l reject
 reject2 * ( * halt-reject"""
 
-    print(sys.argv[1])
+    # print(sys.argv[1])
 
-    print(compile(palindrome_code))
+    print(compile(palindrome_code, "ASM", "palindrome.asm"))
