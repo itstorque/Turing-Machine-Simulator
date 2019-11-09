@@ -90,7 +90,7 @@ def get_symbols(states):
 #    COMPILE    #
 #################
 
-def compile(file_name, export_type="ASM", export_name="", *argv):
+def compile(file_name, export_type="S", export_name="", *argv):
 
     if export_name == "":
 
@@ -100,11 +100,11 @@ def compile(file_name, export_type="ASM", export_name="", *argv):
 
     return SUPPORTED_EXPORT_TYPES[export_type](file_name, export_name, argv)
 
-def compile_asm(file_name, export_name, *argv):
+def compile_asm(code, export_name, *argv):
 
     file_handler = FileController(export_name)
 
-    lines = file_name.split('\n')
+    lines = code.split('\n')
 
     symbols = get_symbols(lines)
 
@@ -120,20 +120,34 @@ def compile_asm(file_name, export_name, *argv):
 
     format_map = '{0:0'+str(bits_per_symbol)+'b}'
 
+    # initiate registers
+    init_code = """
+    li a0, 11184810; value to return
+    li a5, 51966; address of starting position of tape in memory
+    li a1, 0; current state
+
+    """.replace("    ", "")
+    # 11184810 -> 0xAAAAAA
+    # 51966 -> 0xCAFE
+
+    file_handler.append(init_code)
+
     for symbol in symbols:
 
-        symbol_map[symbol] = format_map.format(n)
+        symbol_map[symbol] = (format_map.format(n), n*4) # (*4) is for next location in memory
 
         n += 1
 
-    print(symbol_map, num_per_register)
+    for line in lines:
 
-    file_handler.append("HI")
+        print(line)
+
+    file_handler.append("halt: ret")
 
     return
 
 
-SUPPORTED_EXPORT_TYPES = {"ASM": compile_asm}
+SUPPORTED_EXPORT_TYPES = {"S": compile_asm}
 
 if __name__=="__main__":
 
@@ -173,4 +187,4 @@ reject2 * ( * halt-reject"""
 
     # print(sys.argv[1])
 
-    print(compile(palindrome_code, "ASM", "palindrome.asm"))
+    print(compile(palindrome_code, "S", "exported_examples/palindrome.S"))
