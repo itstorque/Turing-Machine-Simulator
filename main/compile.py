@@ -48,11 +48,19 @@ class FileController:
 
         self.is_open = True
 
-    def append(self, text):
+    def append(self, text, remove_tabs=False, untabulate=False):
 
         if not self.is_open: raise FileClosed
 
         # add new line + text to self.file
+
+        if remove_tabs:
+            text = text.replace("   ", "")
+
+        if untabulate:
+            text = text.replace("   "*2, "_")
+            text = text.replace("   ", "")
+            text = text.replace("_", " "*4)
 
         text = "\n" + text
 
@@ -85,6 +93,22 @@ def get_symbols(states):
             symbols.add(function[0])
 
     return symbols.difference({"*"})
+
+def decode_line(line):
+
+    temp = line.split(";")[0].split(' ')
+
+    if len(temp) < 5: return None
+
+    while temp[0] == "":
+
+        temp = temp[1:]
+
+    if len(temp) < 5:
+        print("ERROR AT LINE:", line)
+        raise YourCodeIsBrokenYouN00b
+
+    return {"state": temp[0], "input": temp[1], "write": temp[2], "move_head": temp[3], "next_state": temp[4]}
 
 #################
 #    COMPILE    #
@@ -124,13 +148,13 @@ def compile_asm(code, export_name, *argv):
     init_code = """
     li a0, 11184810; value to return
     li a5, 51966; address of starting position of tape in memory
-    li a1, 0; current state
+    mv a1, a5; current address in memory
 
-    """.replace("    ", "")
-    # 11184810 -> 0xAAAAAA
-    # 51966 -> 0xCAFE
+    """
+    # 11184810 -> 0x00AAAAAA
+    # 00051966 -> 0x0000CAFE
 
-    file_handler.append(init_code)
+    file_handler.append(init_code, remove_tabs=True)
 
     for symbol in symbols:
 
@@ -140,9 +164,46 @@ def compile_asm(code, export_name, *argv):
 
     for line in lines:
 
-        print(line)
+        decoded_inst = decode_line(line)
 
-    file_handler.append("halt: ret")
+        print(decoded_inst)
+
+        update_head_position = "addi a1, a1, "
+
+        if decoded_inst['move_head'] == "l":
+
+            update_head_position += "-4"
+
+        elif decoded_inst['move_head'] == "r":
+
+            update_head_position += "4"
+
+        else:
+
+            update_head_position = ""
+
+        temp_store_reg = "li t0, " + ord(decoded_inst['write'])
+
+        write_val = "sw t0, 0(a1)"
+
+        load_next_val = "lw t0, 0(a1)"
+
+        line_code = decoded_inst['state'] + decoded_inst['input']
+
+        jump_state = "beq " + line_code
+
+        code = "\n".join(line_code+":", temp_store_reg, write_val, update_head_position, load_next_val, jump_state).replace("\n\n", "\n")
+
+        print(code)
+
+    file_handler.append(
+        """
+        halt:
+            lw a0, 0(a2)
+            lw a1, 4(a2)
+            ret
+        """, untabulate=True
+    )
 
     return
 
