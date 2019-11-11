@@ -110,6 +110,26 @@ def decode_line(line):
 
     return {"state": temp[0], "input": temp[1], "write": temp[2], "move_head": temp[3], "next_state": temp[4]}
 
+def write_asm_instruction(decoded_instruction):
+
+    instruction = ""
+
+    if decoded_instruction['write'] != "*":
+
+        instruction += "li t0, " + decoded_instruction[0] + "\n"
+
+        instruction += "sw t0, 0(a1)\n"
+
+    if decoded_inst['move_head'] == "l":
+
+        instruction += "addi a1, a1, -4\n"
+
+    elif decoded_inst['move_head'] == "r":
+
+        instruction += "addi a1, a1, 4\n"
+
+    return instruction
+
 #################
 #    COMPILE    #
 #################
@@ -162,39 +182,63 @@ def compile_asm(code, export_name, *argv):
 
         n += 1
 
-    for line in lines:
+    states = decode_states(lines)
 
-        decoded_inst = decode_line(line)
+    code = ""
 
-        print(decoded_inst)
+    for state, state_map in states.items():
 
-        update_head_position = "addi a1, a1, "
+        print("STATE_" + state + ":")
 
-        if decoded_inst['move_head'] == "l":
+        append_wildcard = False
 
-            update_head_position += "-4"
+        for input, instruction in state_map.items():
 
-        elif decoded_inst['move_head'] == "r":
+            if input != "*":
 
-            update_head_position += "4"
+                print("    state_" + state + "+" + input + ":")
 
-        else:
+                print("    ", instruction)
 
-            update_head_position = ""
+            else: append_wildcard = True
 
-        temp_store_reg = "li t0, " + ord(decoded_inst['write'])
+        if append_wildcard:
 
-        write_val = "sw t0, 0(a1)"
+            print("j", instruction)
 
-        load_next_val = "lw t0, 0(a1)"
-
-        line_code = decoded_inst['state'] + decoded_inst['input']
-
-        jump_state = "beq " + line_code
-
-        code = "\n".join(line_code+":", temp_store_reg, write_val, update_head_position, load_next_val, jump_state).replace("\n\n", "\n")
-
-        print(code)
+    # for line in lines:
+    #
+    #     decoded_inst = decode_line(line)
+    #
+    #     print(decoded_inst)
+    #
+    #     update_head_position = "addi a1, a1, "
+    #
+    #     if decoded_inst['move_head'] == "l":
+    #
+    #         update_head_position += "-4"
+    #
+    #     elif decoded_inst['move_head'] == "r":
+    #
+    #         update_head_position += "4"
+    #
+    #     else:
+    #
+    #         update_head_position = ""
+    #
+    #     temp_store_reg = "li t0, " + ord(decoded_inst['write'])
+    #
+    #     write_val = "sw t0, 0(a1)"
+    #
+    #     load_next_val = "lw t0, 0(a1)"
+    #
+    #     line_code = decoded_inst['state'] + decoded_inst['input']
+    #
+    #     jump_state = "beq " + line_code
+    #
+    #     code = "\n".join(line_code+":", temp_store_reg, write_val, update_head_position, load_next_val, jump_state).replace("\n\n", "\n")
+    #
+    #     print(code)
 
     file_handler.append(
         """
